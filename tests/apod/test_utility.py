@@ -3,6 +3,8 @@
 import logging
 import unittest
 
+from bs4 import BeautifulSoup
+
 from apod import utility
 
 logging.basicConfig(level=logging.DEBUG)
@@ -101,3 +103,17 @@ class TestApod(unittest.TestCase):
     def test_apod_characteristics(self):
         for page_type in TestApod.TEST_DATA.keys():
             self._test_harness(page_type, TestApod.TEST_DATA[page_type])
+
+    def test_date_with_leading_whitespace(self):
+        """apod.nasa.gov sometimes renders the date line with leading
+        whitespace (e.g. "  2026 September 3"), which must still be parsed."""
+        today = datetime.today().date()
+        page_text = f"""
+        <html><body><center>
+        <h1> Astronomy Picture of the Day </h1>
+          {today.year} {today.strftime("%B")} {today.day}
+        <br>
+        </center></body></html>
+        """
+        soup = BeautifulSoup(page_text, "html.parser")
+        self.assertEqual(utility._date(soup), today.strftime("%Y-%m-%d"))
